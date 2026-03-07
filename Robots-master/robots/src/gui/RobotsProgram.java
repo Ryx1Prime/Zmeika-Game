@@ -12,14 +12,14 @@ public class RobotsProgram
         Locale.setDefault(new Locale("ru", "RU"));
       try {
         UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-//        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+        //UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
 //        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 //        UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
       } catch (Exception e) {
         e.printStackTrace();
       }
       SwingUtilities.invokeLater(() -> {
-        MainApplicationFrame frame = new MainApplicationFrame();
+        gui.MainApplicationFrame frame = new gui.MainApplicationFrame();
         frame.pack();
         frame.setVisible(true);
         frame.setExtendedState(Frame.MAXIMIZED_BOTH);

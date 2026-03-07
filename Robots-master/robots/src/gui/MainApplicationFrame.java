@@ -1,9 +1,13 @@
 package gui;
 
-import java.awt.Dimension;
-import java.awt.Toolkit;
+import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Locale;
+import java.util.Properties;
 
 import javax.swing.*;
 
@@ -18,9 +22,12 @@ import log.Logger;
 public class MainApplicationFrame extends JFrame
 {
     private final JDesktopPane desktopPane = new JDesktopPane();
+
+    private final String pathToConfig = System.getProperty("user.home") + File.separator + "robots.properties";
+    // использование File.separator позволяет более правильно сделать для различных систем запуска нашего приложения
+    // т.е.если у пользователя Linux => /, Windows => \
     
     public MainApplicationFrame() {
-
         //TODO
         UIManager.put("OptionPane.yesButtonText", "Да");
         UIManager.put("OptionPane.noButtonText", "Нет");
@@ -42,6 +49,8 @@ public class MainApplicationFrame extends JFrame
         gui.GameWindow gameWindow = new gui.GameWindow();
         gameWindow.setSize(400,  400);
         addWindow(gameWindow);
+
+        loadWindowState();
 
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new java.awt.event.WindowAdapter(){
@@ -175,9 +184,60 @@ public class MainApplicationFrame extends JFrame
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.QUESTION_MESSAGE);
         if (res == JOptionPane.YES_OPTION){
+            saveWindowPos();
+            dispose();
             System.exit(0);
+
         }
     }
+    // NEW
+    // TODO: FOR SAVING POSITION WINDOW
+    private void saveWindowPos(){
+        try{
+            Properties prop = new Properties();
+            for (JInternalFrame f : desktopPane.getAllFrames()){
+                Rectangle bounds = f.getBounds();
+                String name = f.getTitle();
+                prop.setProperty(name + ".x", Integer.toString(bounds.x));
+                prop.setProperty(name + ".y", Integer.toString(bounds.y));
+                prop.setProperty(name + ".w", Integer.toString(bounds.width));
+                prop.setProperty(name + ".h", Integer.toString(bounds.height));
 
+            }
+            FileOutputStream out = new FileOutputStream(pathToConfig);
+            prop.store(out, "Windows settings for each");
+            out.close();
+        }
+        catch (IOException e){
+            e.printStackTrace();
+        }
+
+    }
+
+    private void loadWindowState() {
+        try{
+            Properties prop = new Properties();
+            FileInputStream in = new FileInputStream(pathToConfig);
+            prop.load(in);
+            in.close();
+            for (JInternalFrame frame : desktopPane.getAllFrames()) {
+                String name = frame.getTitle();
+                String xStr = prop.getProperty(name + ".x");
+                String yStr = prop.getProperty(name + ".y");
+                String wStr = prop.getProperty(name + ".w");
+                String hStr = prop.getProperty(name + ".h");
+
+                if (xStr != null && yStr != null && wStr != null && hStr != null) {
+                    int x = Integer.parseInt(xStr);
+                    int y = Integer.parseInt(yStr);
+                    int w = Integer.parseInt(wStr);
+                    int h = Integer.parseInt(hStr);
+                    frame.setBounds(x, y, w, h);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 }
