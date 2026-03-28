@@ -46,9 +46,16 @@ public class MainApplicationFrame extends JFrame
         gui.LogWindow logWindow = createLogWindow();
         addWindow(logWindow);
 
-        gui.GameWindow gameWindow = new gui.GameWindow();
+        gui.RobotModel robotModel = new gui.RobotModel();
+        gui.GameWindow gameWindow = new gui.GameWindow(robotModel);
         gameWindow.setSize(400,  400);
         addWindow(gameWindow);
+        // TODO
+        gui.CoordinatesWindow cWin = new gui.CoordinatesWindow(robotModel);
+        cWin.setLocation(310, 20);
+        cWin.setSize(200, 110);
+        addWindow(cWin);
+
 
         loadWindowState();
 
@@ -191,7 +198,7 @@ public class MainApplicationFrame extends JFrame
         }
     }
     // NEW
-    // TODO: FOR SAVING POSITION WINDOW
+    // TODO: SAVING POSITION WINDOW
     private void saveWindowPos(){
         try{
             Properties prop = new Properties();
@@ -202,10 +209,10 @@ public class MainApplicationFrame extends JFrame
                 prop.setProperty(name + ".y", Integer.toString(bounds.y));
                 prop.setProperty(name + ".w", Integer.toString(bounds.width));
                 prop.setProperty(name + ".h", Integer.toString(bounds.height));
-
+                prop.setProperty(name + ".icon", Boolean.toString(f.isIcon()));
             }
             FileOutputStream out = new FileOutputStream(pathToConfig);
-            prop.store(out, "Windows settings for each");
+            prop.store(out, "Window settings for each");
             out.close();
         }
         catch (IOException e){
@@ -226,13 +233,17 @@ public class MainApplicationFrame extends JFrame
                 String yStr = prop.getProperty(name + ".y");
                 String wStr = prop.getProperty(name + ".w");
                 String hStr = prop.getProperty(name + ".h");
-
+                String iconStr = prop.getProperty(name + ".icon");
                 if (xStr != null && yStr != null && wStr != null && hStr != null) {
                     int x = Integer.parseInt(xStr);
                     int y = Integer.parseInt(yStr);
                     int w = Integer.parseInt(wStr);
                     int h = Integer.parseInt(hStr);
                     frame.setBounds(x, y, w, h);
+                    if (iconStr != null){
+                        boolean icon = Boolean.parseBoolean(iconStr);
+                        frame.setIcon(icon);
+                    }
                 }
             }
         } catch (Exception e) {
