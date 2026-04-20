@@ -7,11 +7,12 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.awt.geom.AffineTransform;
 import java.util.Timer;
 import java.util.TimerTask;
-
 import javax.swing.JPanel;
+
 
 public class GameVisualizer extends JPanel
 {
@@ -49,17 +50,29 @@ public class GameVisualizer extends JPanel
             @Override
             public void mouseClicked(MouseEvent e)
             {
-                m_model.setTargetPosition(e.getPoint().x, e.getPoint().y);
+                m_model.addPointInPath(e.getPoint().x, e.getPoint().y);
                 repaint();
+            }
+        });
+        addMouseMotionListener(new MouseMotionAdapter() {
+            Point lastPoint = null;
+            @Override
+            public void mouseDragged(MouseEvent e){
+                Point currentPoint = e.getPoint();
+                if (lastPoint == null || currentPoint.distance(lastPoint) > 10.0){
+                    m_model.addPointInPath(e.getPoint().x, e.getPoint().y);
+                    lastPoint = currentPoint;
+                    repaint();
+                }
             }
         });
         setDoubleBuffered(true);
     }
 
-    protected void setTargetPosition(Point p)
-    {
-        m_model.setTargetPosition(p.x, p.y);
-    }
+//    protected void setTargetPosition(Point p)
+//    {
+//        m_model.setTargetPosition(p.x, p.y);
+//    }
     
     protected void onRedrawEvent()
     {
@@ -77,8 +90,9 @@ public class GameVisualizer extends JPanel
     {
         super.paint(g);
         Graphics2D g2d = (Graphics2D)g; 
+        drawPath(g2d);
         drawRobot(g2d, round(m_model.getM_robotPositionX()), round(m_model.getM_robotPositionY()), m_model.getM_robotDirection());
-        drawTarget(g2d, m_model.getM_targetPositionX(), m_model.getM_targetPositionY());
+
     }
     
     private static void fillOval(Graphics g, int centerX, int centerY, int diam1, int diam2)
@@ -106,14 +120,15 @@ public class GameVisualizer extends JPanel
         g.setColor(Color.BLACK);
         drawOval(g, robotCenterX  + 10, robotCenterY, 5, 5);
     }
-    
-    private void drawTarget(Graphics2D g, int x, int y)
+
+    private void drawPath(Graphics2D g)
     {
-        AffineTransform t = AffineTransform.getRotateInstance(0, 0, 0); 
+        AffineTransform t = AffineTransform.getRotateInstance(0,0,0);
         g.setTransform(t);
-        g.setColor(Color.GREEN);
-        fillOval(g, x, y, 5, 5);
-        g.setColor(Color.BLACK);
-        drawOval(g, x, y, 5, 5);
+        g.setColor(Color.CYAN);
+
+        for (Point p : m_model.getPath()){
+            fillOval(g,p.x, p.y, 4,4);
+        }
     }
 }

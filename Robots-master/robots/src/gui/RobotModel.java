@@ -1,26 +1,35 @@
 package gui;
 import javax.swing.*;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 
 public class RobotModel {
     private volatile double m_robotPositionX = 100;
     private volatile double m_robotPositionY = 100;
     private volatile double m_robotDirection = 0;
+    private final Queue<Point> m_path = new ConcurrentLinkedQueue<>();
+//    private volatile int m_targetPositionX = 150;
+//    private volatile int m_targetPositionY = 100;
 
-    private volatile int m_targetPositionX = 150;
-    private volatile int m_targetPositionY = 100;
-
-    private static final double maxVelocity = 0.1;
-    private static final double maxAngularVelocity = 0.01;
+    private static final double maxVelocity = 0.15; // линейная
+    private static final double maxAngularVelocity = 0.035; // угловая
 
     public double getM_robotPositionX() {return m_robotPositionX;};
     public double getM_robotPositionY() {return m_robotPositionY;};
     public double getM_robotDirection() {return m_robotDirection;};
 
-    public int getM_targetPositionX(){return m_targetPositionX;};
-    public int getM_targetPositionY(){return m_targetPositionY;};
-
+//    public int getM_targetPositionX(){return m_targetPositionX;};
+//    public int getM_targetPositionY(){return m_targetPositionY;};
+    public Iterable<Point> getPath(){
+        return m_path;
+    }
+    public void addPointInPath(int x, int y){
+        m_path.add(new Point(x, y));
+    }
     private final List<gui.Observer> observers = new ArrayList<>();
     public void addObserver(gui.Observer obs){
         observers.add(obs);
@@ -31,22 +40,27 @@ public class RobotModel {
         }
     }
 
-    public void setTargetPosition(int x, int y){
-        m_targetPositionX = x;
-        m_targetPositionY = y;
-    }
+//    public void setTargetPosition(int x, int y){
+//        m_targetPositionX = x;
+//        m_targetPositionY = y;
+//    }
 
-    public void update(){
-        double distance = distance(m_targetPositionX, m_targetPositionY,
-                m_robotPositionX, m_robotPositionY);
-        if (distance < 0.5)
-        {
+    public void update() {
+
+        if (m_path.isEmpty()){
+            return;
+        }
+        Point currentTarget = m_path.peek();
+        double distance = distance(currentTarget.x, currentTarget.y, m_robotPositionX, m_robotPositionY);
+        if (distance < 5.0) {
+            m_path.poll();
             return;
         }
         double velocity = maxVelocity;
-        double angleToTarget = angleTo(m_robotPositionX, m_robotPositionY, m_targetPositionX, m_targetPositionY);
-        //TODO: кратчайший путь между двумя любыми углами на окружности никогда не превышает половину круга => 180 градусов
 
+        double angleToTarget = angleTo(m_robotPositionX, m_robotPositionY, currentTarget.x, currentTarget.y);
+        //TODO: кратчайший путь между двумя любыми углами на окружности никогда не превышает половину круга => 180 градусов
+        // метод нормализации угла
         double angularVelocity = 0;
 
         double aDifference = angleToTarget - m_robotDirection;
@@ -56,10 +70,15 @@ public class RobotModel {
         while (aDifference > Math.PI){
             aDifference -= 2 * Math.PI;
         }
-        if (aDifference > 0.001){
+        double step = maxAngularVelocity * 10;
+
+        if (aDifference > step) {
             angularVelocity = maxAngularVelocity;
-        }else if (aDifference < -0.001){
+        } else if (aDifference < -step) {
             angularVelocity = -maxAngularVelocity;
+        } else {
+            m_robotDirection = angleToTarget;
+            angularVelocity = 0;
         }
 
         moveRobot(velocity, angularVelocity, 10);

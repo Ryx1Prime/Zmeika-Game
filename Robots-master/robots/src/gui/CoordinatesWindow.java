@@ -21,9 +21,9 @@ public class CoordinatesWindow extends JInternalFrame implements gui.Observer {
     }
     @Override
     public void updateState(){
-        int x = (int)(m_model.getM_robotPositionX() + 0.5);
+        int x = (int)(m_model.getM_robotPositionX() + 0.5); // hack
         int y = (int)(m_model.getM_robotPositionY() + 0.5);
 
-        coordinatesLabel.setText("X: " + x + "Y: " + y);
+        coordinatesLabel.setText("X: " + x + " Y: " + y);
     }
 }
