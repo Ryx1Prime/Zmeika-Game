@@ -1,10 +1,6 @@
 package gui;
 
-import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Point;
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
@@ -59,7 +55,7 @@ public class GameVisualizer extends JPanel
             @Override
             public void mouseDragged(MouseEvent e){
                 Point currentPoint = e.getPoint();
-                if (lastPoint == null || currentPoint.distance(lastPoint) > 10.0){
+                if (lastPoint == null || currentPoint.distance(lastPoint) > 3.0){
                     m_model.addPointInPath(e.getPoint().x, e.getPoint().y);
                     lastPoint = currentPoint;
                     repaint();
@@ -104,31 +100,52 @@ public class GameVisualizer extends JPanel
     {
         g.drawOval(centerX - diam1 / 2, centerY - diam2 / 2, diam1, diam2);
     }
-    
+
     private void drawRobot(Graphics2D g, int x, int y, double direction)
     {
-        int robotCenterX = round(m_model.getM_robotPositionX());
-        int robotCenterY = round(m_model.getM_robotPositionY());
-        AffineTransform t = AffineTransform.getRotateInstance(direction, robotCenterX, robotCenterY); 
+        int cX = round(m_model.getM_robotPositionX());
+        int cY = round(m_model.getM_robotPositionY());
+        // сглаживание
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        AffineTransform t = AffineTransform.getRotateInstance(direction, cX, cY);
         g.setTransform(t);
-        g.setColor(Color.MAGENTA);
-        fillOval(g, robotCenterX, robotCenterY, 30, 10);
+        // язык
+        g.setColor(Color.RED);
+        g.setStroke(new BasicStroke(2));
+        g.drawLine(cX + 28, cY, cX + 40, cY);
+        g.drawLine(cX + 40, cY, cX + 45, cY - 4);
+        g.drawLine(cX + 40, cY, cX + 45, cY + 4);
+        g.setStroke(new BasicStroke(1));
+        // голова
+        g.setColor(new Color(34, 139, 34));
+        fillOval(g, cX, cY, 60, 24);
         g.setColor(Color.BLACK);
-        drawOval(g, robotCenterX, robotCenterY, 30, 10);
+        drawOval(g, cX, cY, 60, 24);
+        // узор
+        g.setColor(Color.YELLOW);
+        fillOval(g, cX - 10, cY, 30, 8);
+        // левый глаз
         g.setColor(Color.WHITE);
-        fillOval(g, robotCenterX  + 10, robotCenterY, 5, 5);
+        fillOval(g, cX + 14, cY - 8, 10, 10);
         g.setColor(Color.BLACK);
-        drawOval(g, robotCenterX  + 10, robotCenterY, 5, 5);
+        drawOval(g, cX + 14, cY - 8, 10, 10);
+        fillOval(g, cX + 17, cY - 8, 4, 4);
+        // правый глаз
+        g.setColor(Color.WHITE);
+        fillOval(g, cX + 14, cY + 8, 10, 10);
+        g.setColor(Color.BLACK);
+        drawOval(g, cX + 14, cY + 8, 10, 10);
+        fillOval(g, cX + 17, cY + 8, 4, 4);
     }
 
     private void drawPath(Graphics2D g)
     {
         AffineTransform t = AffineTransform.getRotateInstance(0,0,0);
         g.setTransform(t);
-        g.setColor(Color.CYAN);
+        g.setColor(Color.BLACK);
 
         for (Point p : m_model.getPath()){
-            fillOval(g,p.x, p.y, 4,4);
+            fillOval(g,p.x, p.y, 6,6);
         }
     }
 }
