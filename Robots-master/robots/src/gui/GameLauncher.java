@@ -1,19 +1,13 @@
 package gui;
 
-import java.awt.Font;
-import java.awt.Frame;
-import java.awt.GridLayout;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Locale;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
 
-public class RobotsProgram extends JFrame {
+public class GameLauncher extends JFrame {
 
-    public RobotsProgram() {
+    public GameLauncher() {
         setTitle("Выбор режима игры");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(400, 300);
@@ -38,8 +32,12 @@ public class RobotsProgram extends JFrame {
         btn2.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                SlitherMainFrame slitherFrame = new SlitherMainFrame();
-                slitherFrame.setVisible(true);
+                JFrame f = new JFrame("Slither.io - Играем!");
+                f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                f.setSize(800, 600);
+                f.setLocationRelativeTo(null);
+                f.add(new SlitherVisualizer());
+                f.setVisible(true);
                 dispose();
             }
         });
@@ -49,20 +47,15 @@ public class RobotsProgram extends JFrame {
     }
 
     public static void main(String[] args) {
-        Locale.setDefault(new Locale("ru", "RU"));
         try {
-            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-            //UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-            //UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            //UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
-            e.printStackTrace();
         }
 
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                RobotsProgram launcher = new RobotsProgram();
+                GameLauncher launcher = new GameLauncher();
                 launcher.setVisible(true);
             }
         });
