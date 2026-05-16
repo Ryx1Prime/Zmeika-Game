@@ -2,6 +2,7 @@ package gui;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.awt.Color;
 
 public class SlitherModel {
     private double x;
@@ -13,11 +14,24 @@ public class SlitherModel {
 
     private int appleX;
     private int appleY;
+    private int appleType;
+
+    private int shrinkAppleX = -100;
+    private int shrinkAppleY = -100;
+    private boolean isShrinkAppleActive = false;
+
     private Random random = new Random();
 
     private final double normalSpeed = 0.15;
     private final double sprintSpeed = 0.3;
     private final double turnSpeed = 0.04;
+
+    private double speedMultiplier = 1.0;
+    private int magnetRadius = 15;
+    private Color snakeColor = new Color(34, 139, 34);
+
+    private int speedLevel = 1;
+    private int magnetLevel = 0;
 
     private boolean isTurningLeft = false;
     private boolean isTurningRight = false;
@@ -29,10 +43,16 @@ public class SlitherModel {
     private int tailLength = 15;
     private boolean isGameOver = false;
 
+    private int[] rocksX = new int[4];
+    private int[] rocksY = new int[4];
+    private int invertTimer = 0;
+    private int rockTimer = 0;
+
     public SlitherModel(double startX, double startY) {
         this.x = startX;
         this.y = startY;
         this.direction = 0;
+        spawnRocks();
         spawnApple();
     }
 
@@ -43,26 +63,114 @@ public class SlitherModel {
         }
     }
 
+    private boolean isValidSpawn(int px, int py, int minHeadDist) {
+        double dX = px - x;
+        double dY = py - y;
+        if (Math.sqrt(dX * dX + dY * dY) < minHeadDist) return false;
+
+        for (int i = 0; i < rocksX.length; i++) {
+            double rDx = px - rocksX[i];
+            double rDy = py - rocksY[i];
+            if (Math.sqrt(rDx * rDx + rDy * rDy) < 50) return false;
+        }
+        return true;
+    }
+
+    private void spawnRocks() {
+        int halfW = Math.max(100, fieldWidth / 2);
+        int halfH = Math.max(100, fieldHeight / 2);
+        int[][] quadrants = {
+                {0, 0}, {halfW, 0}, {0, halfH}, {halfW, halfH}
+        };
+
+        for (int i = 0; i < rocksX.length; i++) {
+            boolean safe = false;
+            int attempts = 0;
+            while (!safe && attempts < 50) {
+                int offsetX = quadrants[i % 4][0];
+                int offsetY = quadrants[i % 4][1];
+
+                rocksX[i] = offsetX + 30 + random.nextInt(Math.max(1, halfW - 60));
+                rocksY[i] = offsetY + 30 + random.nextInt(Math.max(1, halfH - 60));
+
+                double dX = rocksX[i] - x;
+                double dY = rocksY[i] - y;
+                if (Math.sqrt(dX * dX + dY * dY) > 200) {
+                    safe = true;
+                }
+                attempts++;
+            }
+        }
+        rockTimer = 1000;
+    }
+
     private void spawnApple() {
-        appleX = 30 + random.nextInt(Math.max(1, fieldWidth - 60));
-        appleY = 30 + random.nextInt(Math.max(1, fieldHeight - 60));
+        boolean safe = false;
+        int attempts = 0;
+        while (!safe && attempts < 50) {
+            appleX = 30 + random.nextInt(Math.max(1, fieldWidth - 60));
+            appleY = 30 + random.nextInt(Math.max(1, fieldHeight - 60));
+            safe = isValidSpawn(appleX, appleY, 100);
+            attempts++;
+        }
+
+        double r = random.nextDouble();
+        if (r < 0.7) {
+            appleType = 0;
+        } else if (r < 0.85) {
+            appleType = 1;
+        } else {
+            appleType = 2;
+        }
+    }
+
+    private void spawnShrinkApple() {
+        boolean safe = false;
+        int attempts = 0;
+        while (!safe && attempts < 50) {
+            shrinkAppleX = 30 + random.nextInt(Math.max(1, fieldWidth - 60));
+            shrinkAppleY = 30 + random.nextInt(Math.max(1, fieldHeight - 60));
+            safe = isValidSpawn(shrinkAppleX, shrinkAppleY, 100);
+            attempts++;
+        }
+        isShrinkAppleActive = true;
     }
 
     public void update() {
         if (isGameOver) return;
 
-        if (isTurningLeft) direction -= turnSpeed;
-        if (isTurningRight) direction += turnSpeed;
+        if (invertTimer > 0) {
+            invertTimer--;
+            if (isTurningLeft) direction += turnSpeed;
+            if (isTurningRight) direction -= turnSpeed;
+        } else {
+            if (isTurningLeft) direction -= turnSpeed;
+            if (isTurningRight) direction += turnSpeed;
+        }
 
         double currentSpeed = isSprinting ? sprintSpeed : normalSpeed;
 
-        x += currentSpeed * Math.cos(direction) * 10;
-        y += currentSpeed * Math.sin(direction) * 10;
+        x += currentSpeed * speedMultiplier * Math.cos(direction) * 10;
+        y += currentSpeed * speedMultiplier * Math.sin(direction) * 10;
 
-        if (x < 30) x = 30;
-        if (x > fieldWidth - 30) x = fieldWidth - 30;
-        if (y < 30) y = 30;
-        if (y > fieldHeight - 30) y = fieldHeight - 30;
+        if (x < 0) x = fieldWidth;
+        if (x > fieldWidth) x = 0;
+        if (y < 0) y = fieldHeight;
+        if (y > fieldHeight) y = 0;
+
+        rockTimer--;
+        if (rockTimer <= 0) {
+            spawnRocks();
+        }
+
+        for (int i = 0; i < rocksX.length; i++) {
+            double dX = x - rocksX[i];
+            double dY = y - rocksY[i];
+            if (Math.sqrt(dX * dX + dY * dY) < 32) {
+                isGameOver = true;
+                return;
+            }
+        }
 
         boolean shouldAddHistory = false;
         if (historyX.isEmpty()) {
@@ -88,9 +196,33 @@ public class SlitherModel {
 
         double distX = x - appleX;
         double distY = y - appleY;
-        if (Math.sqrt(distX * distX + distY * distY) < 20) {
+        if (Math.sqrt(distX * distX + distY * distY) < magnetRadius) {
+            if (appleType == 0) {
+                tailLength += 10;
+            } else if (appleType == 1) {
+                tailLength += 30;
+            } else if (appleType == 2) {
+                tailLength = Math.max(15, tailLength - 10);
+                invertTimer = 300;
+            }
             spawnApple();
-            tailLength += 10;
+        }
+
+        if (getScore() > 5 && !isShrinkAppleActive) {
+            if (random.nextInt(300) == 0) {
+                spawnShrinkApple();
+            }
+        }
+
+        if (isShrinkAppleActive) {
+            double sDistX = x - shrinkAppleX;
+            double sDistY = y - shrinkAppleY;
+            if (Math.sqrt(sDistX * sDistX + sDistY * sDistY) < magnetRadius) {
+                tailLength = Math.max(15, tailLength - 20);
+                isShrinkAppleActive = false;
+                shrinkAppleX = -100;
+                shrinkAppleY = -100;
+            }
         }
 
         for (int i = 0; i < historyX.size() - 15; i++) {
@@ -109,13 +241,71 @@ public class SlitherModel {
     public void setTurningRight(boolean turningRight) { this.isTurningRight = turningRight; }
     public void setSprinting(boolean sprinting) { this.isSprinting = sprinting; }
 
+    public void reset(){
+        this.x = 200;
+        this.y = 200;
+        this.direction = 0;
+        this.tailLength = 15;
+        this.isGameOver = false;
+        this.historyX.clear();
+        this.historyY.clear();
+        this.isTurningLeft = false;
+        this.isTurningRight = false;
+        this.isSprinting = false;
+        this.speedMultiplier = 1.0;
+        this.magnetRadius = 15;
+        this.speedLevel = 1;
+        this.magnetLevel = 0;
+        this.invertTimer = 0;
+        this.isShrinkAppleActive = false;
+        this.snakeColor = new Color(34, 139, 34);
+        spawnRocks();
+        spawnApple();
+    }
+
+    public void upgradeSpeed() {
+        int cost = getSpeedCost();
+        if (getScore() >= cost) {
+            tailLength -= cost * 10;
+            speedMultiplier += 0.2;
+            speedLevel++;
+        }
+    }
+
+    public void upgradeMagnet() {
+        int cost = getMagnetCost();
+        if (getScore() >= cost) {
+            tailLength -= cost * 10;
+            magnetRadius += 10;
+            magnetLevel++;
+        }
+    }
+
+    public void changeColor() {
+        this.snakeColor = new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256));
+    }
+
     public double getX() { return x; }
     public double getY() { return y; }
     public double getDirection() { return direction; }
     public int getAppleX() { return appleX; }
     public int getAppleY() { return appleY; }
+    public int getAppleType() { return appleType; }
+
+    public int getShrinkAppleX() { return shrinkAppleX; }
+    public int getShrinkAppleY() { return shrinkAppleY; }
+    public boolean isShrinkAppleActive() { return isShrinkAppleActive; }
+
+    public int[] getRocksX() { return rocksX; }
+    public int[] getRocksY() { return rocksY; }
     public ArrayList<Double> getHistoryX() { return historyX; }
     public ArrayList<Double> getHistoryY() { return historyY; }
     public boolean isGameOver() { return isGameOver; }
     public int getScore() { return (tailLength - 15) / 10; }
+    public int getSpeedCost() { return speedLevel * 5; }
+    public int getMagnetCost() { return (magnetLevel + 1) * 5; }
+    public int getSpeedLevel() { return speedLevel; }
+    public int getMagnetLevel() { return magnetLevel; }
+    public int getMagnetRadius() { return magnetRadius; }
+    public Color getSnakeColor() { return snakeColor; }
 }

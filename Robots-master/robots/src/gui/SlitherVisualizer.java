@@ -1,6 +1,6 @@
 package gui;
 
-import javax.swing.JPanel;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -12,10 +12,21 @@ import java.util.TimerTask;
 public class SlitherVisualizer extends JPanel {
     private final SlitherModel m_model;
     private final Timer m_timer;
+    private JButton retryButton;
 
     public SlitherVisualizer() {
         m_model = new SlitherModel(200, 200);
         m_timer = new Timer("events generator", true);
+        setLayout(null);
+        retryButton = new JButton("RETRY");
+        retryButton.setFont(new Font("Arial", Font.BOLD,24));
+        retryButton.setVisible(false);
+        retryButton.addActionListener(e -> {
+            m_model.reset();
+            retryButton.setVisible(false);
+            requestFocusInWindow();
+        });
+        add(retryButton);
 
         m_timer.schedule(new TimerTask() {
             @Override
@@ -61,9 +72,28 @@ public class SlitherVisualizer extends JPanel {
         m_model.setFieldSize(getWidth(), getHeight());
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
+        int[] rx = m_model.getRocksX();
+        int[] ry = m_model.getRocksY();
+        g2d.setColor(Color.GRAY);
+        for (int i = 0; i < rx.length; i++) {
+            g2d.fillRect(rx[i] - 20, ry[i] - 20, 40, 40);
+        }
+
         if (!m_model.isGameOver()) {
-            g2d.setColor(Color.RED);
+            int type = m_model.getAppleType();
+            if (type == 0) {
+                g2d.setColor(Color.RED);
+            } else if (type == 1) {
+                g2d.setColor(Color.ORANGE);
+            } else {
+                g2d.setColor(new Color(150, 0, 200));
+            }
             fillOval(g2d, m_model.getAppleX(), m_model.getAppleY(), 20, 20);
+        }
+
+        if (m_model.isShrinkAppleActive()) {
+            g2d.setColor(Color.CYAN);
+            fillOval(g2d, m_model.getShrinkAppleX(), m_model.getShrinkAppleY(), 20, 20);
         }
 
         drawSnake(g2d);
@@ -77,14 +107,21 @@ public class SlitherVisualizer extends JPanel {
             String text = "GAME OVER";
             FontMetrics fm = g2d.getFontMetrics();
             int textX = (getWidth() - fm.stringWidth(text)) / 2;
-            g2d.drawString(text, textX, getHeight() / 2);
+            g2d.drawString(text, textX, getHeight() / 2 - 30);
 
             g2d.setColor(Color.WHITE);
             g2d.setFont(new Font("Arial", Font.BOLD, 30));
             String scoreText = "Счет: " + m_model.getScore();
             FontMetrics fm2 = g2d.getFontMetrics();
             int scoreX = (getWidth() - fm2.stringWidth(scoreText)) / 2;
-            g2d.drawString(scoreText, scoreX, getHeight() / 2 + 50);
+            g2d.drawString(scoreText, scoreX, getHeight() / 2 + 20);
+
+            if (!retryButton.isVisible()){
+                int btnW = 200;
+                int btnH = 60;
+                retryButton.setBounds((getWidth() - btnW) / 2, getHeight()/ 2 + 60, btnW, btnH);
+                retryButton.setVisible(true);
+            }
         }
     }
 
@@ -95,7 +132,7 @@ public class SlitherVisualizer extends JPanel {
         int cY = (int) Math.round(m_model.getY());
 
         if (hX.size() > 0) {
-            g.setColor(new Color(34, 139, 34));
+            g.setColor(m_model.getSnakeColor());
             g.setStroke(new BasicStroke(24, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
             for (int i = 0; i < hX.size() - 1; i++) {
@@ -103,12 +140,23 @@ public class SlitherVisualizer extends JPanel {
                 int y1 = (int) Math.round(hY.get(i));
                 int x2 = (int) Math.round(hX.get(i + 1));
                 int y2 = (int) Math.round(hY.get(i + 1));
-                g.drawLine(x1, y1, x2, y2);
+                if (Math.abs(x1 - x2) < 100 && Math.abs(y1 - y2) < 100){
+                    g.drawLine(x1, y1, x2, y2);
+                }
             }
 
             int lastIdx = hX.size() - 1;
-            g.drawLine((int) Math.round(hX.get(lastIdx)), (int) Math.round(hY.get(lastIdx)), cX, cY);
+            int lX = (int) Math.round(hX.get(lastIdx));
+            int lY = (int) Math.round(hY.get(lastIdx));
+            if (Math.abs(lX - cX) < 100 && Math.abs(lY - cY) < 100) {
+                g.drawLine(lX, lY, cX, cY);
+            }
             g.setStroke(new BasicStroke(1));
+        }
+
+        if (m_model.getMagnetLevel() > 0) {
+            g.setColor(new Color(100, 200, 255, 70));
+            fillOval(g, cX, cY, m_model.getMagnetRadius() * 2, m_model.getMagnetRadius() * 2);
         }
 
         double direction = m_model.getDirection();
@@ -124,7 +172,7 @@ public class SlitherVisualizer extends JPanel {
         g.drawLine(cX + 22, cY, cX + 26, cY + 4);
         g.setStroke(new BasicStroke(1));
 
-        g.setColor(new Color(34, 139, 34));
+        g.setColor(m_model.getSnakeColor());
         fillOval(g, cX, cY, 28, 28);
 
         g.setColor(Color.WHITE);

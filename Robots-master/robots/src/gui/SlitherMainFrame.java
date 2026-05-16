@@ -43,25 +43,70 @@ public class SlitherMainFrame extends JFrame {
         gameWindow.setVisible(true);
         desktopPane.add(gameWindow);
 
-        JInternalFrame coordsWindow = new JInternalFrame("Координаты", true, true, true, true);
-        JTextArea coordsText = new JTextArea();
-        coordsText.setEditable(false);
-        coordsText.setFont(new Font("Arial", Font.BOLD, 16));
-        coordsWindow.add(coordsText);
-        coordsWindow.setSize(250, 150);
-        coordsWindow.setLocation(830, 10);
+        JInternalFrame coordsWindow = new JInternalFrame("Магазин и Статы", true, true, true, true);
+        JPanel shopPanel = new JPanel();
+        shopPanel.setLayout(new GridLayout(5, 1, 5, 5));
+
+        JLabel statsLabel = new JLabel();
+        statsLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+
+        JButton buySpeedBtn = new JButton("Скорость");
+        JButton buyMagnetBtn = new JButton("Магнит");
+        JButton changeColorBtn = new JButton("Сменить цвет (Бесплатно)");
+
+        shopPanel.add(statsLabel);
+        shopPanel.add(buySpeedBtn);
+        shopPanel.add(buyMagnetBtn);
+        shopPanel.add(changeColorBtn);
+
+        coordsWindow.add(shopPanel);
+        coordsWindow.setSize(350, 350);
+        coordsWindow.setLocation(830, 100);
         coordsWindow.setVisible(true);
         desktopPane.add(coordsWindow);
+
+        SlitherModel model = visualizer.getModel();
+
+        buySpeedBtn.addActionListener(e -> {
+            if (model != null) {
+                model.upgradeSpeed();
+                visualizer.requestFocusInWindow();
+            }
+        });
+
+        buyMagnetBtn.addActionListener(e -> {
+            if (model != null) {
+                model.upgradeMagnet();
+                visualizer.requestFocusInWindow();
+            }
+        });
+
+        changeColorBtn.addActionListener(e -> {
+            if (model != null) {
+                model.changeColor();
+                visualizer.requestFocusInWindow();
+            }
+        });
 
         Timer timer = new Timer("CoordsUpdater", true);
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                SlitherModel model = visualizer.getModel();
                 if (model != null) {
-                    String text = String.format(" X: %d\n Y: %d\n Угол: %.2f\n Счет: %d",
-                            (int)model.getX(), (int)model.getY(), model.getDirection(), model.getScore());
-                    coordsText.setText(text);
+                    String text = String.format(
+                            "<html><b>Текущая статистика:</b><br>" +
+                                    "Счет: <font color='red'><b>%d</b></font> очков<hr>" +
+                                    "<b>Скорость:</b> Уровень %d (Нужно: %d очков)<br>" +
+                                    "<b>Магнит:</b> Уровень %d (Нужно: %d очков)</html>",
+                            model.getScore(),
+                            model.getSpeedLevel(), model.getSpeedCost(),
+                            model.getMagnetLevel(), model.getMagnetCost()
+                    );
+                    statsLabel.setText(text);
+
+                    buySpeedBtn.setEnabled(model.getScore() >= model.getSpeedCost() && !model.isGameOver());
+                    buyMagnetBtn.setEnabled(model.getScore() >= model.getMagnetCost() && !model.isGameOver());
+                    changeColorBtn.setEnabled(!model.isGameOver());
                 }
             }
         }, 0, 50);
