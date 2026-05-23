@@ -14,12 +14,24 @@ public class SlitherVisualizer extends JPanel {
     private final Timer m_timer;
     private JButton retryButton;
 
+    private final Color COLOR_GAME_BG = new Color(40, 44, 62);
+    private final Color COLOR_GRID = new Color(52, 57, 80);
+    private final Color COLOR_ROCK = new Color(68, 74, 102);
+    private final Color COLOR_ROCK_BORDER = new Color(255, 61, 0);
+
     public SlitherVisualizer() {
         m_model = new SlitherModel(200, 200);
         m_timer = new Timer("events generator", true);
         setLayout(null);
+        setBackground(COLOR_GAME_BG);
+
         retryButton = new JButton("RETRY");
-        retryButton.setFont(new Font("Arial", Font.BOLD,24));
+        retryButton.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        retryButton.setBackground(new Color(255, 61, 0));
+        retryButton.setForeground(Color.WHITE);
+        retryButton.setFocusPainted(false);
+        retryButton.setBorder(BorderFactory.createEmptyBorder());
+        retryButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
         retryButton.setVisible(false);
         retryButton.addActionListener(e -> {
             m_model.reset();
@@ -72,54 +84,64 @@ public class SlitherVisualizer extends JPanel {
         m_model.setFieldSize(getWidth(), getHeight());
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
+        g2d.setColor(COLOR_GRID);
+        for (int i = 0; i < getWidth(); i += 60) {
+            g2d.drawLine(i, 0, i, getHeight());
+        }
+        for (int j = 0; j < getHeight(); j += 60) {
+            g2d.drawLine(0, j, getWidth(), j);
+        }
+
         int[] rx = m_model.getRocksX();
         int[] ry = m_model.getRocksY();
-        g2d.setColor(Color.GRAY);
         for (int i = 0; i < rx.length; i++) {
-            g2d.fillRect(rx[i] - 20, ry[i] - 20, 40, 40);
+            g2d.setColor(COLOR_ROCK);
+            g2d.fillRect(rx[i] - 30, ry[i] - 30, 60, 60);
+            g2d.setColor(COLOR_ROCK_BORDER);
+            g2d.drawRect(rx[i] - 30, ry[i] - 30, 60, 60);
         }
 
         if (!m_model.isGameOver()) {
             int type = m_model.getAppleType();
             if (type == 0) {
-                g2d.setColor(Color.RED);
+                g2d.setColor(new Color(255, 17, 96));
             } else if (type == 1) {
-                g2d.setColor(Color.ORANGE);
+                g2d.setColor(new Color(255, 234, 0));
             } else {
-                g2d.setColor(new Color(150, 0, 200));
+                g2d.setColor(new Color(170, 0, 255));
             }
-            fillOval(g2d, m_model.getAppleX(), m_model.getAppleY(), 20, 20);
+            fillOval(g2d, m_model.getAppleX(), m_model.getAppleY(), 36, 36);
         }
 
         if (m_model.isShrinkAppleActive()) {
-            g2d.setColor(Color.CYAN);
-            fillOval(g2d, m_model.getShrinkAppleX(), m_model.getShrinkAppleY(), 20, 20);
+            g2d.setColor(new Color(0, 229, 255));
+            fillOval(g2d, m_model.getShrinkAppleX(), m_model.getShrinkAppleY(), 36, 36);
         }
 
         drawSnake(g2d);
 
         if (m_model.isGameOver()) {
-            g2d.setColor(new Color(0, 0, 0, 150));
+            g2d.setColor(new Color(13, 15, 23, 200));
             g2d.fillRect(0, 0, getWidth(), getHeight());
 
-            g2d.setColor(Color.RED);
-            g2d.setFont(new Font("Arial", Font.BOLD, 60));
+            g2d.setColor(new Color(255, 17, 96));
+            g2d.setFont(new Font("Segoe UI", Font.BOLD, 64));
             String text = "GAME OVER";
             FontMetrics fm = g2d.getFontMetrics();
             int textX = (getWidth() - fm.stringWidth(text)) / 2;
             g2d.drawString(text, textX, getHeight() / 2 - 30);
 
             g2d.setColor(Color.WHITE);
-            g2d.setFont(new Font("Arial", Font.BOLD, 30));
-            String scoreText = "Счет: " + m_model.getScore();
+            g2d.setFont(new Font("Segoe UI", Font.BOLD, 28));
+            String scoreText = "Итоговый результат: " + m_model.getScore() + " pts";
             FontMetrics fm2 = g2d.getFontMetrics();
             int scoreX = (getWidth() - fm2.stringWidth(scoreText)) / 2;
-            g2d.drawString(scoreText, scoreX, getHeight() / 2 + 20);
+            g2d.drawString(scoreText, scoreX, getHeight() / 2 + 25);
 
             if (!retryButton.isVisible()){
                 int btnW = 200;
-                int btnH = 60;
-                retryButton.setBounds((getWidth() - btnW) / 2, getHeight()/ 2 + 60, btnW, btnH);
+                int btnH = 55;
+                retryButton.setBounds((getWidth() - btnW) / 2, getHeight()/ 2 + 80, btnW, btnH);
                 retryButton.setVisible(true);
             }
         }
@@ -133,7 +155,7 @@ public class SlitherVisualizer extends JPanel {
 
         if (hX.size() > 0) {
             g.setColor(m_model.getSnakeColor());
-            g.setStroke(new BasicStroke(24, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            g.setStroke(new BasicStroke(32, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 
             for (int i = 0; i < hX.size() - 1; i++) {
                 int x1 = (int) Math.round(hX.get(i));
@@ -155,7 +177,7 @@ public class SlitherVisualizer extends JPanel {
         }
 
         if (m_model.getMagnetLevel() > 0) {
-            g.setColor(new Color(100, 200, 255, 70));
+            g.setColor(new Color(0, 229, 255, 40));
             fillOval(g, cX, cY, m_model.getMagnetRadius() * 2, m_model.getMagnetRadius() * 2);
         }
 
@@ -165,23 +187,23 @@ public class SlitherVisualizer extends JPanel {
         AffineTransform t = AffineTransform.getRotateInstance(direction, cX, cY);
         g.setTransform(t);
 
-        g.setColor(Color.RED);
-        g.setStroke(new BasicStroke(2));
-        g.drawLine(cX + 14, cY, cX + 22, cY);
-        g.drawLine(cX + 22, cY, cX + 26, cY - 4);
-        g.drawLine(cX + 22, cY, cX + 26, cY + 4);
+        g.setColor(new Color(255, 17, 96));
+        g.setStroke(new BasicStroke(3));
+        g.drawLine(cX + 18, cY, cX + 28, cY);
+        g.drawLine(cX + 28, cY, cX + 33, cY - 5);
+        g.drawLine(cX + 28, cY, cX + 33, cY + 5);
         g.setStroke(new BasicStroke(1));
 
         g.setColor(m_model.getSnakeColor());
-        fillOval(g, cX, cY, 28, 28);
+        fillOval(g, cX, cY, 38, 38);
 
         g.setColor(Color.WHITE);
-        fillOval(g, cX + 4, cY - 8, 10, 10);
-        fillOval(g, cX + 4, cY + 8, 10, 10);
+        fillOval(g, cX + 6, cY - 10, 13, 13);
+        fillOval(g, cX + 6, cY + 10, 13, 13);
 
         g.setColor(Color.BLACK);
-        fillOval(g, cX + 6, cY - 8, 6, 6);
-        fillOval(g, cX + 6, cY + 8, 6, 6);
+        fillOval(g, cX + 9, cY - 10, 7, 7);
+        fillOval(g, cX + 9, cY + 10, 7, 7);
 
         g.setTransform(oldT);
     }
