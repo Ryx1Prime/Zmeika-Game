@@ -6,6 +6,8 @@ import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 public class SlitherMainFrame extends JFrame {
 
@@ -15,6 +17,9 @@ public class SlitherMainFrame extends JFrame {
     private final Color COLOR_TEXT_MAIN = new Color(240, 244, 248);
     private final Color COLOR_TEXT_MUTED = new Color(144, 164, 174);
     private final Color COLOR_SCORE = new Color(255, 61, 0);
+
+    private static JTextArea logArea;
+    private static final DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     public SlitherMainFrame() {
         setTitle("Slither.io - Игровой процесс");
@@ -47,13 +52,27 @@ public class SlitherMainFrame extends JFrame {
         desktopPane.setBorder(new EmptyBorder(15, 15, 15, 15));
         setContentPane(desktopPane);
 
+        logArea = new JTextArea();
+        logArea.setEditable(false);
+        logArea.setBackground(new Color(16, 18, 26));
+        logArea.setForeground(new Color(155, 170, 190));
+        logArea.setFont(new Font("Consolas", Font.PLAIN, 18));
+        logArea.setMargin(new Insets(8, 12, 8, 12));
+
+        JScrollPane logScroll = new JScrollPane(logArea);
+        logScroll.setBorder(BorderFactory.createEmptyBorder());
+
+        JInternalFrame logWindow = new JInternalFrame("", false, false, false, false);
+        ((javax.swing.plaf.basic.BasicInternalFrameUI) logWindow.getUI()).setNorthPane(null);
+        logWindow.setBorder(new LineBorder(COLOR_PANEL, 2));
+        logWindow.setPreferredSize(new Dimension(0, 180));
+        logWindow.add(logScroll);
+
         JInternalFrame gameWindow = new JInternalFrame("", false, false, false, false);
         ((javax.swing.plaf.basic.BasicInternalFrameUI) gameWindow.getUI()).setNorthPane(null);
         gameWindow.setBorder(new LineBorder(COLOR_PANEL, 2));
         SlitherVisualizer visualizer = new SlitherVisualizer();
         gameWindow.add(visualizer);
-        desktopPane.add(gameWindow, BorderLayout.CENTER);
-        gameWindow.setVisible(true);
 
         JInternalFrame coordsWindow = new JInternalFrame("", false, false, false, false);
         ((javax.swing.plaf.basic.BasicInternalFrameUI) coordsWindow.getUI()).setNorthPane(null);
@@ -62,69 +81,55 @@ public class SlitherMainFrame extends JFrame {
 
         JPanel shopPanel = new JPanel();
         shopPanel.setBackground(COLOR_PANEL);
-        shopPanel.setLayout(new GridBagLayout());
+        shopPanel.setLayout(new GridLayout(7, 1, 0, 20));
         shopPanel.setBorder(new EmptyBorder(40, 30, 40, 30));
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 1.0;
 
         JLabel titleLabel = new JLabel("МОНИТОРИНГ СИСТЕМЫ");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         titleLabel.setForeground(COLOR_TEXT_MAIN);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        gbc.gridy = 0;
-        gbc.weighty = 0.1;
-        gbc.insets = new Insets(0, 0, 10, 0);
-        shopPanel.add(titleLabel, gbc);
 
         JLabel scoreLabel = new JLabel("Счет: 0 pts");
         scoreLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
         scoreLabel.setForeground(COLOR_SCORE);
         scoreLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        gbc.gridy = 1;
-        gbc.weighty = 0.15;
-        shopPanel.add(scoreLabel, gbc);
 
         JLabel speedLabel = new JLabel("Скорость: Уровень 1");
         speedLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         speedLabel.setForeground(COLOR_TEXT_MUTED);
         speedLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        gbc.gridy = 2;
-        gbc.weighty = 0.1;
-        shopPanel.add(speedLabel, gbc);
 
         JLabel magnetLabel = new JLabel("Магнит: Уровень 0");
         magnetLabel.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         magnetLabel.setForeground(COLOR_TEXT_MUTED);
         magnetLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        gbc.gridy = 3;
-        gbc.weighty = 0.1;
-        shopPanel.add(magnetLabel, gbc);
 
         JButton buySpeedBtn = new JButton("Улучшить Скорость");
         styleGameButton(buySpeedBtn, new Color(34, 40, 58));
-        gbc.gridy = 4;
-        gbc.weighty = 0.15;
-        gbc.insets = new Insets(10, 0, 10, 0);
-        shopPanel.add(buySpeedBtn, gbc);
 
         JButton buyMagnetBtn = new JButton("Улучшить Магнит");
         styleGameButton(buyMagnetBtn, new Color(34, 40, 58));
-        gbc.gridy = 5;
-        gbc.weighty = 0.15;
-        shopPanel.add(buyMagnetBtn, gbc);
 
         JButton changeColorBtn = new JButton("Сменить скин");
         styleGameButton(changeColorBtn, new Color(41, 45, 62));
-        gbc.gridy = 6;
-        gbc.weighty = 0.15;
-        shopPanel.add(changeColorBtn, gbc);
+
+        shopPanel.add(titleLabel);
+        shopPanel.add(scoreLabel);
+        shopPanel.add(speedLabel);
+        shopPanel.add(magnetLabel);
+        shopPanel.add(buySpeedBtn);
+        shopPanel.add(buyMagnetBtn);
+        shopPanel.add(changeColorBtn);
 
         coordsWindow.add(shopPanel);
+
+        desktopPane.add(gameWindow, BorderLayout.CENTER);
         desktopPane.add(coordsWindow, BorderLayout.EAST);
+        desktopPane.add(logWindow, BorderLayout.SOUTH);
+
+        gameWindow.setVisible(true);
         coordsWindow.setVisible(true);
+        logWindow.setVisible(true);
 
         SlitherModel model = visualizer.getModel();
 
@@ -181,5 +186,23 @@ public class SlitherMainFrame extends JFrame {
         button.setFocusPainted(false);
         button.setBorder(BorderFactory.createLineBorder(new Color(45, 52, 74), 1));
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    }
+
+    public static void log(String message) {
+        if (logArea != null) {
+            SwingUtilities.invokeLater(() -> {
+                String time = LocalTime.now().format(timeFormatter);
+                logArea.append(time + " " + message + "\n");
+
+                if (logArea.getLineCount() > 100) {
+                    try {
+                        int end = logArea.getLineStartOffset(logArea.getLineCount() - 100);
+                        logArea.replaceRange("", 0, end);
+                    } catch (Exception ex) {}
+                }
+
+                logArea.setCaretPosition(logArea.getDocument().getLength());
+            });
+        }
     }
 }

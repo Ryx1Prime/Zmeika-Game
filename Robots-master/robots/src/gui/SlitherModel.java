@@ -63,6 +63,7 @@ public class SlitherModel {
                 isInitialized = true;
                 spawnRocks();
                 spawnApple();
+                SlitherMainFrame.log("игра запущена поле готово");
             }
         }
     }
@@ -70,12 +71,12 @@ public class SlitherModel {
     private boolean isValidSpawn(int px, int py, int minHeadDist) {
         double dX = px - x;
         double dY = py - y;
-        if (Math.sqrt(dX * dX + dY * dY) < minHeadDist) return false;
+        if ((dX * dX + dY * dY) < minHeadDist * minHeadDist) return false;
 
         for (int i = 0; i < rocksX.length; i++) {
             double rDx = px - rocksX[i];
             double rDy = py - rocksY[i];
-            if (Math.sqrt(rDx * rDx + rDy * rDy) < 80) return false;
+            if ((rDx * rDx + rDy * rDy) < 6400) return false;
         }
         return true;
     }
@@ -99,13 +100,14 @@ public class SlitherModel {
 
                 double dX = rocksX[i] - x;
                 double dY = rocksY[i] - y;
-                if (Math.sqrt(dX * dX + dY * dY) > 130) {
+                if ((dX * dX + dY * dY) > 16900) {
                     safe = true;
                 }
                 attempts++;
             }
         }
         rockTimer = 1000;
+        SlitherMainFrame.log("появилось 13 камней");
     }
 
     private void spawnApple() {
@@ -121,10 +123,13 @@ public class SlitherModel {
         double r = random.nextDouble();
         if (r < 0.7) {
             appleType = 0;
+            SlitherMainFrame.log("создано обычное яблоко");
         } else if (r < 0.85) {
             appleType = 1;
+            SlitherMainFrame.log("создано золотое яблоко");
         } else {
             appleType = 2;
+            SlitherMainFrame.log("появился ядовитый гриб");
         }
     }
 
@@ -138,6 +143,7 @@ public class SlitherModel {
             attempts++;
         }
         isShrinkAppleActive = true;
+        SlitherMainFrame.log("появилось синее яблоко");
     }
 
     public void update() {
@@ -164,14 +170,16 @@ public class SlitherModel {
 
         rockTimer--;
         if (rockTimer <= 0) {
+            SlitherMainFrame.log("время камней вышло");
             spawnRocks();
         }
 
         for (int i = 0; i < rocksX.length; i++) {
             double dX = x - rocksX[i];
             double dY = y - rocksY[i];
-            if (Math.sqrt(dX * dX + dY * dY) < 49) {
+            if ((dX * dX + dY * dY) < 2401) {
                 isGameOver = true;
+                SlitherMainFrame.log("врезался в камень игра окончена");
                 return;
             }
         }
@@ -184,7 +192,7 @@ public class SlitherModel {
             double lastY = historyY.get(historyY.size() - 1);
             double dX = x - lastX;
             double dY = y - lastY;
-            if (Math.sqrt(dX * dX + dY * dY) >= 2.0) {
+            if ((dX * dX + dY * dY) >= 4.0) {
                 shouldAddHistory = true;
             }
         }
@@ -200,14 +208,17 @@ public class SlitherModel {
 
         double distX = x - appleX;
         double distY = y - appleY;
-        if (Math.sqrt(distX * distX + distY * distY) < magnetRadius) {
+        if ((distX * distX + distY * distY) < magnetRadius * magnetRadius) {
             if (appleType == 0) {
                 tailLength += 10;
+                SlitherMainFrame.log("съел яблоко хвост вырос");
             } else if (appleType == 1) {
                 tailLength += 30;
+                SlitherMainFrame.log("съел золотое яблоко хороший буст");
             } else if (appleType == 2) {
                 tailLength = Math.max(15, tailLength - 10);
                 invertTimer = 300;
+                SlitherMainFrame.log("съел гриб управление перепутано");
             }
             spawnApple();
         }
@@ -221,11 +232,12 @@ public class SlitherModel {
         if (isShrinkAppleActive) {
             double sDistX = x - shrinkAppleX;
             double sDistY = y - shrinkAppleY;
-            if (Math.sqrt(sDistX * sDistX + sDistY * sDistY) < magnetRadius) {
+            if ((sDistX * sDistX + sDistY * sDistY) < magnetRadius * magnetRadius) {
                 tailLength = Math.max(15, tailLength - 20);
                 isShrinkAppleActive = false;
                 shrinkAppleX = -100;
                 shrinkAppleY = -100;
+                SlitherMainFrame.log("съел синее яблоко уменьшился");
             }
         }
 
@@ -234,8 +246,9 @@ public class SlitherModel {
             double hy = historyY.get(i);
             double dX = x - hx;
             double dY = y - hy;
-            if (Math.sqrt(dX * dX + dY * dY) < 16) {
+            if ((dX * dX + dY * dY) < 256) {
                 isGameOver = true;
+                SlitherMainFrame.log("укусил себя за хвост конец игры");
                 break;
             }
         }
@@ -264,6 +277,7 @@ public class SlitherModel {
         this.isShrinkAppleActive = false;
         this.snakeColor = new Color(34, 139, 34);
         this.isInitialized = true;
+        SlitherMainFrame.log("рестарт игры");
         spawnRocks();
         spawnApple();
     }
@@ -274,6 +288,7 @@ public class SlitherModel {
             tailLength -= cost * 10;
             speedMultiplier += 0.2;
             speedLevel++;
+            SlitherMainFrame.log("купил скорость уровень " + speedLevel);
         }
     }
 
@@ -283,11 +298,13 @@ public class SlitherModel {
             tailLength -= cost * 10;
             magnetRadius += 12;
             magnetLevel++;
+            SlitherMainFrame.log("купил магнит уровень " + magnetLevel);
         }
     }
 
     public void changeColor() {
         this.snakeColor = new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256));
+        SlitherMainFrame.log("поменял цвет змейки");
     }
 
     public double getX() { return x; }

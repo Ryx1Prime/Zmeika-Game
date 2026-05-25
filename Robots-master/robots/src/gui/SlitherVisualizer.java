@@ -11,7 +11,8 @@ import java.util.TimerTask;
 
 public class SlitherVisualizer extends JPanel {
     private final SlitherModel m_model;
-    private final Timer m_timer;
+    private final Timer m_physicsTimer;
+    private final javax.swing.Timer m_renderTimer;
     private JButton retryButton;
 
     private final Color COLOR_GAME_BG = new Color(40, 44, 62);
@@ -19,9 +20,16 @@ public class SlitherVisualizer extends JPanel {
     private final Color COLOR_ROCK = new Color(68, 74, 102);
     private final Color COLOR_ROCK_BORDER = new Color(255, 61, 0);
 
+    private boolean leftPressed = false;
+    private boolean rightPressed = false;
+    private boolean sprintPressed = false;
+
+    private javax.swing.Timer leftTimer;
+    private javax.swing.Timer rightTimer;
+    private javax.swing.Timer sprintTimer;
+
     public SlitherVisualizer() {
         m_model = new SlitherModel(200, 200);
-        m_timer = new Timer("events generator", true);
         setLayout(null);
         setBackground(COLOR_GAME_BG);
 
@@ -40,15 +48,14 @@ public class SlitherVisualizer extends JPanel {
         });
         add(retryButton);
 
-        m_timer.schedule(new TimerTask() {
-            @Override
-            public void run() { repaint(); }
-        }, 0, 50);
-
-        m_timer.schedule(new TimerTask() {
+        m_physicsTimer = new Timer("physics generator", true);
+        m_physicsTimer.schedule(new TimerTask() {
             @Override
             public void run() { m_model.update(); }
         }, 0, 10);
+
+        m_renderTimer = new javax.swing.Timer(16, e -> repaint());
+        m_renderTimer.start();
 
         setFocusable(true);
         requestFocusInWindow();
@@ -57,17 +64,70 @@ public class SlitherVisualizer extends JPanel {
             @Override
             public void keyPressed(KeyEvent e) {
                 int key = e.getKeyCode();
-                if (key == KeyEvent.VK_A) { m_model.setTurningLeft(true); }
-                if (key == KeyEvent.VK_D) { m_model.setTurningRight(true); }
-                if (key == KeyEvent.VK_W) { m_model.setSprinting(true); }
+
+                if (key == KeyEvent.VK_A) {
+                    if (leftTimer != null && leftTimer.isRunning()) {
+                        leftTimer.stop();
+                    } else if (!leftPressed) {
+                        leftPressed = true;
+                        m_model.setTurningLeft(true);
+                        SlitherMainFrame.log("нажал а поворот налево");
+                    }
+                }
+                if (key == KeyEvent.VK_D) {
+                    if (rightTimer != null && rightTimer.isRunning()) {
+                        rightTimer.stop();
+                    } else if (!rightPressed) {
+                        rightPressed = true;
+                        m_model.setTurningRight(true);
+                        SlitherMainFrame.log("нажал d поворот направо");
+                    }
+                }
+                if (key == KeyEvent.VK_W) {
+                    if (sprintTimer != null && sprintTimer.isRunning()) {
+                        sprintTimer.stop();
+                    } else if (!sprintPressed) {
+                        sprintPressed = true;
+                        m_model.setSprinting(true);
+                        SlitherMainFrame.log("нажал w ускорение");
+                    }
+                }
             }
 
             @Override
             public void keyReleased(KeyEvent e) {
                 int key = e.getKeyCode();
-                if (key == KeyEvent.VK_A) { m_model.setTurningLeft(false); }
-                if (key == KeyEvent.VK_D) { m_model.setTurningRight(false); }
-                if (key == KeyEvent.VK_W) { m_model.setSprinting(false); }
+
+                if (key == KeyEvent.VK_A) {
+                    if (leftTimer != null) leftTimer.stop();
+                    leftTimer = new javax.swing.Timer(20, el -> {
+                        leftPressed = false;
+                        m_model.setTurningLeft(false);
+                        SlitherMainFrame.log("отпустил а");
+                    });
+                    leftTimer.setRepeats(false);
+                    leftTimer.start();
+                }
+                if (key == KeyEvent.VK_D) {
+                    if (rightTimer != null) rightTimer.stop();
+                    rightTimer = new javax.swing.Timer(20, el -> {
+                        rightPressed = false;
+                        m_model.setTurningRight(false);
+                        SlitherMainFrame.log("отпустил d");
+                    });
+                    rightTimer.setRepeats(false);
+                    rightTimer.start();
+                }
+                if (key == KeyEvent.VK_W) {
+                    if (sprintTimer != null) sprintTimer.stop();
+                    sprintTimer = new javax.swing.Timer(20, el -> {
+                        sprintPressed = false;
+                        m_model.setSprinting(false);
+                        SlitherMainFrame.log("отпустил w");
+                    });
+                    sprintTimer.setRepeats(false);
+                    sprintTimer.start();
+                }
             }
         });
     }
